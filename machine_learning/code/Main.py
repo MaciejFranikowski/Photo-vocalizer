@@ -9,8 +9,10 @@ if __name__ == "__main__":
     fruitModel.compileModel()
     fruitModel.trainModel()
 
-    #### TESTING
+    #### EXPORT
+    #fruitModel.exporToTfLite("../model/fruitModel.tflite")
 
+    #### TESTING
     # Display the imported training Set
     # fruitModel.displayImportedTrainingDataset()
 

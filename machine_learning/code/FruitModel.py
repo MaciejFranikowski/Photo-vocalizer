@@ -77,6 +77,7 @@ class FruitModel:
 		action = input()
 
 	###### TESTING
+
 	def displayDatasetClassification(self):
 		plt.figure(figsize=(10,10))
 		for images, labels in self.dataSetTest.take(1):
@@ -101,3 +102,10 @@ class FruitModel:
 	def evaluateModel(self):
 		# Check how it does on new images
 		self.model.evaluate(self.dataSetTest)
+
+	##### EXPORT 
+	def exporToTfLite(self, fileName):
+		converter = tf.lite.TFLiteConverter.from_keras_model(self.model)
+		tfLiteModel = converter.convert()
+		with open(fileName, "wb") as file:
+			file.write(tfLiteModel)
