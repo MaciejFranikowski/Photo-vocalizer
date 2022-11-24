@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Photo_vocalizer</string>
+    <string name="pick_gallery">Gallery pick</string>
+    <string name="classification_result">Classification result</string>
+    <string name="classified_as">Classified as:</string>
+    <string name="take_photo">Take Photo</string>
+    <string name="classify">Classify image</string>
 </resources>
