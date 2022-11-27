@@ -84,8 +84,8 @@ class MainActivity : AppCompatActivity() {
             override fun onResults(bundle: Bundle) {
                 val data = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 Toast.makeText(localContext,data!![0], Toast.LENGTH_LONG).show()
-                if(data!![0].isNotEmpty())
-                    useRecognitionResult(data!![0])
+                if(data[0].isNotEmpty())
+                    useRecognitionResult(data[0])
             }
         })
         isRecognizerSet = true
@@ -93,26 +93,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun useRecognitionResult(recognitionResult: String){
-
         val regex1 = "wybierz".toRegex(RegexOption.IGNORE_CASE)
         var match = regex1.find(recognitionResult)
         if(match != null){
-            Toast.makeText(this, match.value, Toast.LENGTH_LONG).show()
+//            Toast.makeText(this, match.value, Toast.LENGTH_LONG).show()
             pickFromGallery(null)
+            return
         }
 
         val regex2 = "zrób|wykonaj".toRegex(RegexOption.IGNORE_CASE)
         match = regex2.find(recognitionResult)
         if(match != null){
-            Toast.makeText(this, match.value, Toast.LENGTH_LONG).show()
+//            Toast.makeText(this, match.value, Toast.LENGTH_LONG).show()
             takePhoto(null)
+            return
         }
 
         val regex3 = "klasyfik".toRegex(RegexOption.IGNORE_CASE)
         match = regex3.find(recognitionResult)
         if(match != null){
-            Toast.makeText(this, match.value, Toast.LENGTH_LONG).show()
+//            Toast.makeText(this, match.value, Toast.LENGTH_LONG).show()
             classifyImage(null)
+            return
         }
     }
 
@@ -193,8 +195,7 @@ class MainActivity : AppCompatActivity() {
                  // Releases model resources if no longer used.
                  model.close()
              } catch (e: Exception) {
-                 // TODO Handle the exception
-                 Log.i("TAG", "No image")
+                 Toast.makeText(this, "Classification failed", Toast.LENGTH_LONG).show()
              }
          } else {
             Toast.makeText(this@MainActivity, "No image loaded", Toast.LENGTH_LONG).show()

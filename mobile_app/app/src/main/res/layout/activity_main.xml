@@ -8,7 +8,7 @@
 
     <Button
         android:id="@+id/photoButton"
-        android:layout_width="320dp"
+        android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_above="@id/galleryButton"
         android:layout_marginTop="24dp"
@@ -25,7 +25,7 @@
 
     <Button
         android:id="@+id/galleryButton"
-        android:layout_width="320dp"
+        android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_alignParentBottom="true"
         android:layout_centerInParent="true"
@@ -43,9 +43,10 @@
 
     <Button
         android:id="@+id/classifyButton"
-        android:layout_width="320dp"
+        android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
         android:onClick="classifyImage"
         android:text="@string/classify"
         android:textAllCaps="false"
@@ -58,7 +59,7 @@
 
     <Button
         android:id="@+id/listenButton"
-        android:layout_width="320dp"
+        android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="24dp"
@@ -73,15 +74,17 @@
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="330dp"
-        android:layout_height="392dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:layout_centerHorizontal="true"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="56dp"
+        android:layout_marginEnd="24dp"
+        app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.32999998" />
 
     <TextView
         android:id="@+id/classified"
@@ -89,18 +92,29 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/imageView"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="48dp"
         android:text="@string/classified_as"
         android:textSize="18sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="@+id/imageView"
-        app:layout_constraintTop_toBottomOf="@+id/imageView" />
+        app:layout_constraintTop_toBottomOf="@+id/guideline" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintGuide_percent="0.4596633"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.42000002" />
 
     <TextView
         android:id="@+id/resultTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/classified"
+        android:layout_marginStart="8dp"
         android:hint="@string/classification_result"
         android:text=""
         android:textColor="#CD0046"
@@ -108,8 +122,20 @@
         android:textSize="18sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@+id/classified"
-        app:layout_constraintEnd_toEndOf="@+id/imageView"
         app:layout_constraintStart_toEndOf="@+id/classified" />
+
+    <ImageButton
+        android:id="@+id/button"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="4dp"
+        android:background="@drawable/rounded_shape"
+        android:src="@drawable/arrow_rotate_right"
+        app:layout_constraintBottom_toTopOf="@+id/imageView"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
