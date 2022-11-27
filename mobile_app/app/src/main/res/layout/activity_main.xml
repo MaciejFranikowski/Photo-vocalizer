@@ -103,7 +103,7 @@
         android:layout_below="@+id/classified"
         android:hint="@string/classification_result"
         android:text=""
-        android:textColor="#C30000"
+        android:textColor="#CD0046"
         android:textColorHint="#78909C"
         android:textSize="18sp"
         android:textStyle="bold"
