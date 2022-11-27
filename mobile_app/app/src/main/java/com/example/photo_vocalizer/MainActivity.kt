@@ -35,10 +35,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var imageView : ImageView
     private lateinit var resultText : TextView
     private lateinit var image: Bitmap
+    private lateinit var speechRecognizer : SpeechRecognizer
+    private lateinit var speechRecognizerIntent : Intent
+    private var isRecognizerSet : Boolean = false
     private var isImageSet : Boolean = false
     private val imageSize = 32
     private val cameraRequestCode = 1
     private val galleryRequestCode = 3
+    private val cameraRequestPermissionCode = 101
+    private val audioRequestPermissionCode = 102
+    private val languageCode = "pl-PL"
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,54 +54,52 @@ class MainActivity : AppCompatActivity() {
         setUpSpeechRecognition()
     }
 
+    private fun setUpSpeechRecognition(){
+        if(checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED){
+            if (!isRecognizerSet)
+                createSpeechRecognizer()
+        } else {
+            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), audioRequestPermissionCode)
+        }
+    }
 
-    fun createSpeechRecognizer(){
+    private fun createSpeechRecognizer(){
         val localContext = this
-        val speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
-        val speechRecognizerIntent:Intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
+        speechRecognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
         speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-        speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pl-PL")
+        speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageCode)
         speechRecognizer.setRecognitionListener(object : RecognitionListener {
             override fun onReadyForSpeech(bundle: Bundle) {}
-            override fun onBeginningOfSpeech() {
-//                    editText.setText("")
-//                    editText.setHint("Listening...")
-            }
+            override fun onBeginningOfSpeech() {}
             override fun onRmsChanged(v: Float) {}
             override fun onBufferReceived(bytes: ByteArray) {}
             override fun onEndOfSpeech() {}
             override fun onError(i: Int) {}
+            override fun onPartialResults(bundle: Bundle) {}
+            override fun onEvent(i: Int, bundle: Bundle) {}
             override fun onResults(bundle: Bundle) {
                 val data = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 Toast.makeText(localContext,data!![0], Toast.LENGTH_LONG).show()
             }
-
-            override fun onPartialResults(bundle: Bundle) {}
-            override fun onEvent(i: Int, bundle: Bundle) {}
         })
+        isRecognizerSet = true
+        setOnTouchListener()
     }
+
     @SuppressLint("ClickableViewAccessibility")
-    fun setUpSpeechRecognition(){
-        if(checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED){
-            createSpeechRecognizer()
-            listenButton.setOnTouchListener { v, event ->
-                when (event?.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        Log.i("TAG", "ButtonDown")
-                        speechRecognizer.startListening(speechRecognizerIntent)
-                    }
-                    MotionEvent.ACTION_UP -> {
-                        Log.i("TAG", "ButtonUp")
-                        speechRecognizer.stopListening()
-                    }
+    private fun setOnTouchListener(){
+        listenButton.setOnTouchListener { v, event ->
+            when (event?.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    speechRecognizer.startListening(speechRecognizerIntent)
                 }
-                v?.onTouchEvent(event) ?: true
+                MotionEvent.ACTION_UP -> {
+                    speechRecognizer.stopListening()
+                }
             }
-
-        } else {
-            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 101)
+            v?.onTouchEvent(event) ?: true
         }
-
     }
 
     fun takePhoto(view: View){
@@ -103,24 +107,23 @@ class MainActivity : AppCompatActivity() {
             val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
             startActivityForResult(cameraIntent, cameraRequestCode)
         } else {
-            requestPermissions(arrayOf(Manifest.permission.CAMERA), 100)
+            requestPermissions(arrayOf(Manifest.permission.CAMERA), cameraRequestPermissionCode)
         }
     }
+
     fun pickFromGallery(view: View){
         val cameraIntent =
             Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
         startActivityForResult(cameraIntent, galleryRequestCode)
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == RESULT_OK) {
-            Toast.makeText(this,"Halo", Toast.LENGTH_LONG);
             if (requestCode == cameraRequestCode) {
-                Log.i("TAG", requestCode.toString())
-                Toast.makeText(this,"Halo", Toast.LENGTH_LONG);
                 image = (data?.extras!!["data"] as Bitmap?)!!
-                val dimension = image!!.width.coerceAtMost(image.height)
+                val dimension = image.width.coerceAtMost(image.height)
                 image = ThumbnailUtils.extractThumbnail(image, dimension, dimension)
                 imageView.setImageBitmap(image)
                 image = Bitmap.createScaledBitmap(image, imageSize, imageSize, false)
@@ -135,12 +138,10 @@ class MainActivity : AppCompatActivity() {
                     e.printStackTrace()
                 }
                 imageView.setImageBitmap(image)
-                image = Bitmap.createScaledBitmap(image!!, imageSize, imageSize, false)
+                image = Bitmap.createScaledBitmap(image, imageSize, imageSize, false)
                 isImageSet = true
             }
-
         }
-
     }
 
      fun classifyImage(view: View) {
@@ -200,6 +201,29 @@ class MainActivity : AppCompatActivity() {
         imageView = findViewById(R.id.imageView)
         resultText = findViewById(R.id.resultTextView)
         listenButton = findViewById(R.id.listenButton)
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            cameraRequestPermissionCode -> {
+                if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                    Log.i("TAG", "Permission has been denied by user")
+                } else {
+                    Log.i("TAG", "Permission has been granted by user")
+                }
+            }
+            audioRequestPermissionCode -> {
+                if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                    Log.i("TAG", "Permission has been denied by user")
+                } else {
+                    Log.i("TAG", "Permission has been granted by user")
+                }
+            }
+        }
     }
 
 }
