@@ -1,6 +1,7 @@
 package com.example.photo_vocalizer
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -8,7 +9,11 @@ import android.media.ThumbnailUtils
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
@@ -26,6 +31,7 @@ import java.nio.ByteOrder
 class MainActivity : AppCompatActivity() {
     private lateinit var photoButton : Button
     private lateinit var galleryButton : Button
+    private lateinit var listenButton : Button
     private lateinit var imageView : ImageView
     private lateinit var resultText : TextView
     private lateinit var image: Bitmap
@@ -39,6 +45,56 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         assignReferences()
+        setUpSpeechRecognition()
+    }
+
+
+    fun createSpeechRecognizer(){
+        val localContext = this
+        val speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
+        val speechRecognizerIntent:Intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+        speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+        speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pl-PL")
+        speechRecognizer.setRecognitionListener(object : RecognitionListener {
+            override fun onReadyForSpeech(bundle: Bundle) {}
+            override fun onBeginningOfSpeech() {
+//                    editText.setText("")
+//                    editText.setHint("Listening...")
+            }
+            override fun onRmsChanged(v: Float) {}
+            override fun onBufferReceived(bytes: ByteArray) {}
+            override fun onEndOfSpeech() {}
+            override fun onError(i: Int) {}
+            override fun onResults(bundle: Bundle) {
+                val data = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                Toast.makeText(localContext,data!![0], Toast.LENGTH_LONG).show()
+            }
+
+            override fun onPartialResults(bundle: Bundle) {}
+            override fun onEvent(i: Int, bundle: Bundle) {}
+        })
+    }
+    @SuppressLint("ClickableViewAccessibility")
+    fun setUpSpeechRecognition(){
+        if(checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED){
+            createSpeechRecognizer()
+            listenButton.setOnTouchListener { v, event ->
+                when (event?.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        Log.i("TAG", "ButtonDown")
+                        speechRecognizer.startListening(speechRecognizerIntent)
+                    }
+                    MotionEvent.ACTION_UP -> {
+                        Log.i("TAG", "ButtonUp")
+                        speechRecognizer.stopListening()
+                    }
+                }
+                v?.onTouchEvent(event) ?: true
+            }
+
+        } else {
+            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 101)
+        }
 
     }
 
@@ -143,6 +199,7 @@ class MainActivity : AppCompatActivity() {
         galleryButton = findViewById(R.id.galleryButton)
         imageView = findViewById(R.id.imageView)
         resultText = findViewById(R.id.resultTextView)
+        listenButton = findViewById(R.id.listenButton)
     }
 
 }

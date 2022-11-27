@@ -8,10 +8,10 @@
 
     <Button
         android:id="@+id/photoButton"
-        android:layout_width="0dp"
+        android:layout_width="320dp"
         android:layout_height="0dp"
         android:layout_above="@id/galleryButton"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="24dp"
         android:layout_marginBottom="8dp"
         android:onClick="takePhoto"
         android:text="@string/take_photo"
@@ -20,12 +20,12 @@
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/galleryButton"
         app:layout_constraintEnd_toEndOf="@+id/imageView"
-        app:layout_constraintStart_toStartOf="@+id/classified"
+        app:layout_constraintStart_toStartOf="@+id/imageView"
         app:layout_constraintTop_toBottomOf="@+id/classified" />
 
     <Button
         android:id="@+id/galleryButton"
-        android:layout_width="0dp"
+        android:layout_width="320dp"
         android:layout_height="0dp"
         android:layout_alignParentBottom="true"
         android:layout_centerInParent="true"
@@ -43,28 +43,42 @@
 
     <Button
         android:id="@+id/classifyButton"
-        android:layout_width="0dp"
+        android:layout_width="320dp"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
-        android:layout_marginBottom="40dp"
         android:onClick="classifyImage"
         android:text="@string/classify"
         android:textAllCaps="false"
         android:textSize="20sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@+id/galleryButton"
-        app:layout_constraintStart_toStartOf="@+id/galleryButton"
+        app:layout_constraintBottom_toTopOf="@+id/listenButton"
+        app:layout_constraintEnd_toEndOf="@+id/photoButton"
+        app:layout_constraintStart_toStartOf="@+id/photoButton"
         app:layout_constraintTop_toBottomOf="@+id/galleryButton" />
+
+    <Button
+        android:id="@+id/listenButton"
+        android:layout_width="320dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="24dp"
+        android:text="@string/start_listening"
+        android:textAllCaps="false"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/photoButton"
+        app:layout_constraintStart_toStartOf="@+id/photoButton"
+        app:layout_constraintTop_toBottomOf="@+id/classifyButton" />
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="320sp"
-        android:layout_height="320sp"
+        android:layout_width="330dp"
+        android:layout_height="392dp"
         android:layout_centerHorizontal="true"
-        android:layout_marginStart="15dp"
-        android:layout_marginTop="60dp"
-        android:layout_marginEnd="15dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -75,7 +89,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/imageView"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="60dp"
+        android:layout_marginTop="32dp"
         android:text="@string/classified_as"
         android:textSize="18sp"
         android:textStyle="bold"
@@ -87,7 +101,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/classified"
-        android:layout_marginStart="10dp"
         android:hint="@string/classification_result"
         android:text=""
         android:textColor="#C30000"
@@ -95,13 +108,8 @@
         android:textSize="18sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@+id/classified"
-        app:layout_constraintStart_toEndOf="@+id/classified"
-        app:layout_constraintTop_toTopOf="@+id/classified" />
-
-<!--    <androidx.constraintlayout.widget.ReactiveGuide-->
-<!--        android:id="@+id/fold"-->
-<!--        app:reactiveGuide_valueId="@id/fold"-->
-<!--        android:orientation="horizontal"  android:layout_height="60dp"/>-->
+        app:layout_constraintEnd_toEndOf="@+id/imageView"
+        app:layout_constraintStart_toEndOf="@+id/classified" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
