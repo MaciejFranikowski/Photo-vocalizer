@@ -21,12 +21,14 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import com.example.photo_vocalizer.ml.FruitModel
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlin.math.abs
 
 
 class MainActivity : AppCompatActivity() {
@@ -36,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var imageView : ImageView
     private lateinit var resultText : TextView
     private lateinit var image: Bitmap
+    private lateinit var orgImage: Bitmap
     private lateinit var speechRecognizer : SpeechRecognizer
     private lateinit var speechRecognizerIntent : Intent
     private lateinit var colors : Array<Int>
@@ -118,6 +121,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun rotateBitmap(view : View?){
+        val oldBitmap = imageView.drawable.toBitmap()
+        val drawable = imageView.drawable
+        val newBitmap = Bitmap.createBitmap(drawable.intrinsicHeight, drawable.intrinsicWidth, Bitmap.Config.ARGB_8888)
+        val oldHeight = drawable.intrinsicHeight
+        val oldWidth = drawable.intrinsicWidth
+//        Log.i("TAG:", oldWidth.toString())
+        // Iterate over all the pixels, getting the RGB values for each one
+        for (x in 0 until oldWidth) {
+            for (y in 0 until oldHeight) {
+                val `val` = oldBitmap.getPixel(x,y) // RGB
+                newBitmap.setPixel(oldHeight - y -1, x, `val`)
+            }
+        }
+        orgImage = newBitmap
+        imageView.setImageBitmap(newBitmap)
+//        image = Bitmap.createScaledBitmap(newBitmap, imageSize, imageSize, false)
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     private fun setOnTouchListener(){
         listenButton.setOnTouchListener { v, event ->
@@ -159,6 +181,7 @@ class MainActivity : AppCompatActivity() {
                 val dimension = image.width.coerceAtMost(image.height)
                 image = ThumbnailUtils.extractThumbnail(image, dimension, dimension)
                 imageView.setImageBitmap(image)
+                orgImage = image.copy(image.config, false)
                 image = Bitmap.createScaledBitmap(image, imageSize, imageSize, false)
                 isImageSet = true
             }
@@ -171,6 +194,7 @@ class MainActivity : AppCompatActivity() {
                     e.printStackTrace()
                 }
                 imageView.setImageBitmap(image)
+                orgImage = image.copy(image.config, false)
                 image = Bitmap.createScaledBitmap(image, imageSize, imageSize, false)
                 isImageSet = true
             }
