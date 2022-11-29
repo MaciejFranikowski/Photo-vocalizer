@@ -131,7 +131,7 @@
         android:layout_marginTop="16dp"
         android:layout_marginEnd="4dp"
         android:background="@drawable/rounded_shape"
-        android:onClick="rotateBitmap"
+        android:onClick="rotateBitmapRight"
         android:src="@drawable/arrow_rotate_right"
         app:layout_constraintBottom_toTopOf="@+id/imageView"
         app:layout_constraintDimensionRatio="1:1"

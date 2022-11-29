@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Matrix
 import android.media.ThumbnailUtils
 import android.net.Uri
 import android.os.Bundle
@@ -28,7 +29,6 @@ import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import kotlin.math.abs
 
 
 class MainActivity : AppCompatActivity() {
@@ -37,8 +37,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var listenButton : Button
     private lateinit var imageView : ImageView
     private lateinit var resultText : TextView
-    private lateinit var image: Bitmap
-    private lateinit var orgImage: Bitmap
+    private lateinit var bitmap: Bitmap
+    private lateinit var rescaledBitmap: Bitmap
     private lateinit var speechRecognizer : SpeechRecognizer
     private lateinit var speechRecognizerIntent : Intent
     private lateinit var colors : Array<Int>
@@ -96,10 +96,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun useRecognitionResult(recognitionResult: String){
-        val regex1 = "wybierz".toRegex(RegexOption.IGNORE_CASE)
-        var match = regex1.find(recognitionResult)
+        val regex0 = "Obróć".toRegex(RegexOption.IGNORE_CASE)
+        val regexPrawo = "prawo".toRegex(RegexOption.IGNORE_CASE)
+        val regexLewo = "lewo".toRegex(RegexOption.IGNORE_CASE)
+        val regexOdwrot = "Odwróć".toRegex(RegexOption.IGNORE_CASE)
+        var match = regex0.find(recognitionResult)
         if(match != null){
-//            Toast.makeText(this, match.value, Toast.LENGTH_LONG).show()
+            Toast.makeText(this, match.value, Toast.LENGTH_LONG).show()
+            if(regexPrawo.find(recognitionResult) != null)
+                rotateBitmapRight(null)
+
+            if(regexLewo.find(recognitionResult) != null)
+                rotateBitmapLeft(null)
+            return
+        }
+
+        if(regexOdwrot.find(recognitionResult) != null)
+            flipBitmap(null)
+
+        val regex1 = "wybierz".toRegex(RegexOption.IGNORE_CASE)
+        match = regex1.find(recognitionResult)
+        if(match != null){
+            // Toast.makeText(this, match.value, Toast.LENGTH_LONG).show()
             pickFromGallery(null)
             return
         }
@@ -107,7 +125,7 @@ class MainActivity : AppCompatActivity() {
         val regex2 = "zrób|wykonaj".toRegex(RegexOption.IGNORE_CASE)
         match = regex2.find(recognitionResult)
         if(match != null){
-//            Toast.makeText(this, match.value, Toast.LENGTH_LONG).show()
+            // Toast.makeText(this, match.value, Toast.LENGTH_LONG).show()
             takePhoto(null)
             return
         }
@@ -121,23 +139,68 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun rotateBitmap(view : View?){
-        val oldBitmap = imageView.drawable.toBitmap()
-        val drawable = imageView.drawable
-        val newBitmap = Bitmap.createBitmap(drawable.intrinsicHeight, drawable.intrinsicWidth, Bitmap.Config.ARGB_8888)
-        val oldHeight = drawable.intrinsicHeight
-        val oldWidth = drawable.intrinsicWidth
-//        Log.i("TAG:", oldWidth.toString())
-        // Iterate over all the pixels, getting the RGB values for each one
-        for (x in 0 until oldWidth) {
-            for (y in 0 until oldHeight) {
-                val `val` = oldBitmap.getPixel(x,y) // RGB
-                newBitmap.setPixel(oldHeight - y -1, x, `val`)
-            }
+    fun rotateBitmapRight(view : View?){
+        if(isImageSet){
+//            val oldBitmap = imageView.drawable.toBitmap()
+//            val drawable = imageView.drawable
+//            val newBitmap = Bitmap.createBitmap(drawable.intrinsicHeight, drawable.intrinsicWidth, Bitmap.Config.ARGB_8888)
+//            val oldHeight = drawable.intrinsicHeight
+//            val oldWidth = drawable.intrinsicWidth
+//            for (x in 0 until oldWidth) {
+//                for (y in 0 until oldHeight) {
+//                    val `val` = oldBitmap.getPixel(x,y) // RGB
+//                    newBitmap.setPixel(oldHeight - y -1, x, `val`)
+//                }
+//            }
+//            imageView.setImageBitmap(newBitmap)
+//            rescaledBitmap = Bitmap.createScaledBitmap(newBitmap, imageSize, imageSize, false)
+
+            val matrix = Matrix()
+            matrix.postRotate(90F)
+            val scaledBitmap = imageView.drawable.toBitmap()
+            val rotatedBitmap = Bitmap.createBitmap(scaledBitmap,
+                0,
+                0,
+                scaledBitmap.width,
+                scaledBitmap.height,
+                matrix,
+                true)
+            imageView.setImageBitmap(rotatedBitmap)
         }
-        orgImage = newBitmap
-        imageView.setImageBitmap(newBitmap)
-//        image = Bitmap.createScaledBitmap(newBitmap, imageSize, imageSize, false)
+    }
+
+    fun rotateBitmapLeft(view : View?){
+        if(isImageSet){
+            val oldBitmap = imageView.drawable.toBitmap()
+            val drawable = imageView.drawable
+            val newBitmap = Bitmap.createBitmap(drawable.intrinsicHeight, drawable.intrinsicWidth, Bitmap.Config.ARGB_8888)
+            val oldHeight = drawable.intrinsicHeight
+            val oldWidth = drawable.intrinsicWidth
+            for (x in 0 until oldWidth) {
+                for (y in 0 until oldHeight) {
+                    val `val` = oldBitmap.getPixel(x,y) // RGB
+                    newBitmap.setPixel(y, oldWidth - x - 1, `val`)
+                }
+            }
+            imageView.setImageBitmap(newBitmap)
+            rescaledBitmap = Bitmap.createScaledBitmap(newBitmap, imageSize, imageSize, false)
+        }
+    }
+
+    fun flipBitmap(view : View?){
+        if(isImageSet){
+            val oldBitmap = imageView.drawable.toBitmap()
+            val drawable = imageView.drawable
+            val newBitmap = Bitmap.createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
+            for (x in 0 until newBitmap.width) {
+                for (y in 0 until newBitmap.height) {
+                    val `val` = oldBitmap.getPixel(x,y) // RGB
+                    newBitmap.setPixel(newBitmap.width - x -1, newBitmap.height - y -1, `val`)
+                }
+            }
+            imageView.setImageBitmap(newBitmap)
+            rescaledBitmap = Bitmap.createScaledBitmap(newBitmap, imageSize, imageSize, false)
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -177,25 +240,23 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == RESULT_OK) {
             if (requestCode == cameraRequestCode) {
-                image = (data?.extras!!["data"] as Bitmap?)!!
-                val dimension = image.width.coerceAtMost(image.height)
-                image = ThumbnailUtils.extractThumbnail(image, dimension, dimension)
-                imageView.setImageBitmap(image)
-                orgImage = image.copy(image.config, false)
-                image = Bitmap.createScaledBitmap(image, imageSize, imageSize, false)
+                bitmap = (data?.extras!!["data"] as Bitmap?)!!
+                val dimension = bitmap.width.coerceAtMost(bitmap.height)
+                bitmap = ThumbnailUtils.extractThumbnail(bitmap, dimension, dimension)
+                imageView.setImageBitmap(bitmap)
+                rescaledBitmap = Bitmap.createScaledBitmap(bitmap, imageSize, imageSize, false)
                 isImageSet = true
             }
 
             if (requestCode == galleryRequestCode) {
                 val dat: Uri? = data?.data
                 try {
-                    image = MediaStore.Images.Media.getBitmap(this.contentResolver, dat)
+                    bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, dat)
                 } catch (e: IOException) {
                     e.printStackTrace()
                 }
-                imageView.setImageBitmap(image)
-                orgImage = image.copy(image.config, false)
-                image = Bitmap.createScaledBitmap(image, imageSize, imageSize, false)
+                imageView.setImageBitmap(bitmap)
+                rescaledBitmap = Bitmap.createScaledBitmap(bitmap, imageSize, imageSize, false)
                 isImageSet = true
             }
         }
@@ -204,7 +265,6 @@ class MainActivity : AppCompatActivity() {
     @Suppress("UNUSED_PARAMETER")
      fun classifyImage(view: View?) {
          if(isImageSet){
-             //iterate over each pixel and extract R, G, and B values. Add those values individually to the byte buffer.
              try {
                  val model = FruitModel.newInstance(applicationContext)
                  // Creates inputs for reference.
@@ -231,7 +291,7 @@ class MainActivity : AppCompatActivity() {
         val byteBuffer: ByteBuffer = ByteBuffer.allocateDirect(4 * imageSize * imageSize * 3)
         byteBuffer.order(ByteOrder.nativeOrder())
         val intValues = IntArray(imageSize * imageSize)
-        image.getPixels(intValues, 0, image.width, 0, 0, image.width, image.height)
+        rescaledBitmap.getPixels(intValues, 0, rescaledBitmap.width, 0, 0, rescaledBitmap.width, rescaledBitmap.height)
         var pixel = 0
         // Iterate over all the pixels, getting the RGB values for each one
         for (i in 0 until imageSize) {
@@ -271,7 +331,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
-        permissions: Array<String>, grantResults: IntArray
+        permissions: Array<String>, grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
