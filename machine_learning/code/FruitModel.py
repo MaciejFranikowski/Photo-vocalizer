@@ -34,7 +34,7 @@ class FruitModel:
 			tf.keras.layers.MaxPooling2D(),
 			tf.keras.layers.Conv2D(32, 3, activation=self.activationFunction),
 			tf.keras.layers.MaxPooling2D(),
-			# make it one dimeniosnal
+			# make it one dimensio=nal
 			tf.keras.layers.Flatten(),
 			# 128 neurons layer
 			tf.keras.layers.Dense(128, activation=self.activationFunction),
