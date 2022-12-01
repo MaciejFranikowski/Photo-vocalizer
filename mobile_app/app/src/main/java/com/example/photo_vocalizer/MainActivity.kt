@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.Matrix
 import android.media.ThumbnailUtils
 import android.net.Uri
 import android.os.Bundle
@@ -21,14 +20,9 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.toBitmap
-import com.example.photo_vocalizer.ml.FruitModel
-import org.tensorflow.lite.DataType
-import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
+import com.example.photo_vocalizer.bitmapTransformation.BitmapTransformation
+import com.example.photo_vocalizer.classification.Classification
 import java.io.IOException
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 
 class MainActivity : AppCompatActivity() {
@@ -39,9 +33,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var resultText : TextView
     private lateinit var bitmap: Bitmap
     private lateinit var rescaledBitmap: Bitmap
+    private lateinit var classifier: Classification
+    private lateinit var bitmapTransformation : BitmapTransformation
     private lateinit var speechRecognizer : SpeechRecognizer
     private lateinit var speechRecognizerIntent : Intent
-    private lateinit var colors : Array<Int>
     private var isRecognizerSet : Boolean = false
     private var isImageSet : Boolean = false
     private val imageSize = 32
@@ -50,26 +45,29 @@ class MainActivity : AppCompatActivity() {
     private val cameraRequestPermissionCode = 101
     private val audioRequestPermissionCode = 102
     private val languageCode = "pl-PL"
-    private val classes = arrayOf("Apple", "Banana", "Orange")
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         assignReferences()
+        bitmapTransformation = BitmapTransformation()
+        classifier = Classification(this, imageSize, resultText)
         setUpSpeechRecognition()
     }
 
     private fun setUpSpeechRecognition(){
         if(checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED){
-            if (!isRecognizerSet)
+            if (!isRecognizerSet) {
                 createSpeechRecognizer()
+                setOnTouchListener()
+            }
         } else {
             requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), audioRequestPermissionCode)
         }
     }
 
-    private fun createSpeechRecognizer(){
+    private fun createSpeechRecognizer() : Boolean{
         val localContext = this
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
         speechRecognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
@@ -91,8 +89,7 @@ class MainActivity : AppCompatActivity() {
                     useRecognitionResult(data[0])
             }
         })
-        isRecognizerSet = true
-        setOnTouchListener()
+        return true
     }
 
     private fun useRecognitionResult(recognitionResult: String){
@@ -104,14 +101,14 @@ class MainActivity : AppCompatActivity() {
         val regexTake = "zrób|wykonaj".toRegex(RegexOption.IGNORE_CASE)
         val regexClassify = "klasyfik".toRegex(RegexOption.IGNORE_CASE)
         if(regex0.find(recognitionResult) != null){
-            if(regexRight.find(recognitionResult) != null)
-                rotateBitmapRight(null)
-            if(regexLeft.find(recognitionResult) != null)
-                rotateBitmapLeft(null)
+            if(regexRight.find(recognitionResult) != null && isImageSet)
+                bitmapTransformation.rotateBitmap90(imageView)
+            if(regexLeft.find(recognitionResult) != null && isImageSet)
+                bitmapTransformation.rotateBitmap270(imageView)
             return
         }
-        if(regexFlip.find(recognitionResult) != null)
-            flipBitmap(null)
+        if(regexFlip.find(recognitionResult) != null && isImageSet)
+            bitmapTransformation.rotateBitmap180(imageView)
 
         if(regexPick.find(recognitionResult) != null){
             pickFromGallery(null)
@@ -128,53 +125,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun rotateBitmapRight(view : View?){
-        if(isImageSet){
-            val matrix = Matrix()
-            matrix.postRotate(90F)
-            val scaledBitmap = imageView.drawable.toBitmap()
-            val rotatedBitmap = Bitmap.createBitmap(scaledBitmap,
-                0,
-                0,
-                scaledBitmap.width,
-                scaledBitmap.height,
-                matrix,
-                true)
-            imageView.setImageBitmap(rotatedBitmap)
-        }
-    }
-
-    private fun rotateBitmapLeft(view : View?){
-        if(isImageSet){
-            val matrix = Matrix()
-            matrix.postRotate(270F)
-            val scaledBitmap = imageView.drawable.toBitmap()
-            val rotatedBitmap = Bitmap.createBitmap(scaledBitmap,
-                0,
-                0,
-                scaledBitmap.width,
-                scaledBitmap.height,
-                matrix,
-                true)
-            imageView.setImageBitmap(rotatedBitmap)
-        }
-    }
-
-    private fun flipBitmap(view : View?){
-        if(isImageSet){
-            val matrix = Matrix()
-            matrix.postRotate(180F)
-            val scaledBitmap = imageView.drawable.toBitmap()
-            val rotatedBitmap = Bitmap.createBitmap(scaledBitmap,
-                0,
-                0,
-                scaledBitmap.width,
-                scaledBitmap.height,
-                matrix,
-                true)
-            imageView.setImageBitmap(rotatedBitmap)
-        }
-    }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setOnTouchListener(){
@@ -220,7 +170,6 @@ class MainActivity : AppCompatActivity() {
                 rescaledBitmap = Bitmap.createScaledBitmap(bitmap, imageSize, imageSize, false)
                 isImageSet = true
             }
-
             if (requestCode == galleryRequestCode) {
                 val dat: Uri? = data?.data
                 try {
@@ -238,57 +187,16 @@ class MainActivity : AppCompatActivity() {
     @Suppress("UNUSED_PARAMETER")
      fun classifyImage(view: View?) {
          if(isImageSet){
-             try {
-                 val model = FruitModel.newInstance(applicationContext)
-                 // Creates inputs for reference.
-                 val inputFeature0 = TensorBuffer.createFixedSize(intArrayOf(1, 32, 32, 3), DataType.FLOAT32)
-                 inputFeature0.loadBuffer(createByteBuffer())
-                 // Runs model inference and gets result.
-                 val outputs: FruitModel.Outputs = model.process(inputFeature0)
-                 val outputFeature0: TensorBuffer = outputs.outputFeature0AsTensorBuffer
-                 val confidences = outputFeature0.floatArray
-                 // set the found class based on the confidences
-                 setClassifiedClass(confidences)
-                 // Releases model resources if no longer used.
-                 model.close()
-             } catch (e: Exception) {
-                 Toast.makeText(this, "Classification failed", Toast.LENGTH_LONG).show()
-             }
+             classifier.classifyImage(this, rescaledBitmap)
          } else {
             Toast.makeText(this@MainActivity, "No image loaded", Toast.LENGTH_LONG).show()
          }
     }
 
-    private fun createByteBuffer() : ByteBuffer{
-        // (Float[4] * imageSize ^2 * rgbValues[3])
-        val byteBuffer: ByteBuffer = ByteBuffer.allocateDirect(4 * imageSize * imageSize * 3)
-        byteBuffer.order(ByteOrder.nativeOrder())
-        val intValues = IntArray(imageSize * imageSize)
-        rescaledBitmap.getPixels(intValues, 0, rescaledBitmap.width, 0, 0, rescaledBitmap.width, rescaledBitmap.height)
-        var pixel = 0
-        // Iterate over all the pixels, getting the RGB values for each one
-        for (i in 0 until imageSize) {
-            for (j in 0 until imageSize) {
-                val `val` = intValues[pixel++] // RGB
-                byteBuffer.putFloat((`val` shr 16 and 0xFF) * (1f / 1))
-                byteBuffer.putFloat((`val` shr 8 and 0xFF) * (1f / 1))
-                byteBuffer.putFloat((`val` and 0xFF) * (1f / 1))
-            }
-        }
-        return byteBuffer
-    }
-
-    private fun setClassifiedClass(confidences: FloatArray){
-        var maxPos = 0
-        var maxConfidence = 0f
-        for (i in confidences.indices) {
-            if (confidences[i] > maxConfidence) {
-                maxConfidence = confidences[i]
-                maxPos = i
-            }
-        }
-        resultText.text = classes[maxPos]
-        resultText.setTextColor(colors[maxPos])
+    @Suppress("UNUSED_PARAMETER")
+    fun rotate90(view: View){
+        if(isImageSet)
+            bitmapTransformation.rotateBitmap90(imageView)
     }
 
     private fun assignReferences(){
@@ -297,9 +205,7 @@ class MainActivity : AppCompatActivity() {
         imageView = findViewById(R.id.imageView)
         resultText = findViewById(R.id.resultTextView)
         listenButton = findViewById(R.id.listenButton)
-        colors = arrayOf(ContextCompat.getColor(this, R.color.red),
-            ContextCompat.getColor(this, R.color.yellow),
-            ContextCompat.getColor(this, R.color.orange))
+        rescaledBitmap = Bitmap.createBitmap(32,32, Bitmap.Config.ARGB_8888)
     }
 
     override fun onRequestPermissionsResult(
