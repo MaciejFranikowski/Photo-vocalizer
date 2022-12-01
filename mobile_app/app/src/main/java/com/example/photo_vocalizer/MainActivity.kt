@@ -96,44 +96,33 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun useRecognitionResult(recognitionResult: String){
-        val regex0 = "Obróć".toRegex(RegexOption.IGNORE_CASE)
-        val regexPrawo = "prawo".toRegex(RegexOption.IGNORE_CASE)
-        val regexLewo = "lewo".toRegex(RegexOption.IGNORE_CASE)
-        val regexOdwrot = "Odwróć".toRegex(RegexOption.IGNORE_CASE)
-        var match = regex0.find(recognitionResult)
-        if(match != null){
-            Toast.makeText(this, match.value, Toast.LENGTH_LONG).show()
-            if(regexPrawo.find(recognitionResult) != null)
+        val regex0 = "obróć".toRegex(RegexOption.IGNORE_CASE)
+        val regexRight = "prawo|90".toRegex(RegexOption.IGNORE_CASE)
+        val regexLeft = "lewo|270".toRegex(RegexOption.IGNORE_CASE)
+        val regexFlip = "odwróć|180".toRegex(RegexOption.IGNORE_CASE)
+        val regexPick = "wybierz".toRegex(RegexOption.IGNORE_CASE)
+        val regexTake = "zrób|wykonaj".toRegex(RegexOption.IGNORE_CASE)
+        val regexClassify = "klasyfik".toRegex(RegexOption.IGNORE_CASE)
+        if(regex0.find(recognitionResult) != null){
+            if(regexRight.find(recognitionResult) != null)
                 rotateBitmapRight(null)
-
-            if(regexLewo.find(recognitionResult) != null)
+            if(regexLeft.find(recognitionResult) != null)
                 rotateBitmapLeft(null)
             return
         }
-
-        if(regexOdwrot.find(recognitionResult) != null)
+        if(regexFlip.find(recognitionResult) != null)
             flipBitmap(null)
 
-        val regex1 = "wybierz".toRegex(RegexOption.IGNORE_CASE)
-        match = regex1.find(recognitionResult)
-        if(match != null){
-            // Toast.makeText(this, match.value, Toast.LENGTH_LONG).show()
+        if(regexPick.find(recognitionResult) != null){
             pickFromGallery(null)
             return
         }
 
-        val regex2 = "zrób|wykonaj".toRegex(RegexOption.IGNORE_CASE)
-        match = regex2.find(recognitionResult)
-        if(match != null){
-            // Toast.makeText(this, match.value, Toast.LENGTH_LONG).show()
+        if(regexTake.find(recognitionResult) != null){
             takePhoto(null)
             return
         }
-
-        val regex3 = "klasyfik".toRegex(RegexOption.IGNORE_CASE)
-        match = regex3.find(recognitionResult)
-        if(match != null){
-//            Toast.makeText(this, match.value, Toast.LENGTH_LONG).show()
+        if(regexClassify.find(recognitionResult) != null){
             classifyImage(null)
             return
         }
@@ -141,20 +130,6 @@ class MainActivity : AppCompatActivity() {
 
     fun rotateBitmapRight(view : View?){
         if(isImageSet){
-//            val oldBitmap = imageView.drawable.toBitmap()
-//            val drawable = imageView.drawable
-//            val newBitmap = Bitmap.createBitmap(drawable.intrinsicHeight, drawable.intrinsicWidth, Bitmap.Config.ARGB_8888)
-//            val oldHeight = drawable.intrinsicHeight
-//            val oldWidth = drawable.intrinsicWidth
-//            for (x in 0 until oldWidth) {
-//                for (y in 0 until oldHeight) {
-//                    val `val` = oldBitmap.getPixel(x,y) // RGB
-//                    newBitmap.setPixel(oldHeight - y -1, x, `val`)
-//                }
-//            }
-//            imageView.setImageBitmap(newBitmap)
-//            rescaledBitmap = Bitmap.createScaledBitmap(newBitmap, imageSize, imageSize, false)
-
             val matrix = Matrix()
             matrix.postRotate(90F)
             val scaledBitmap = imageView.drawable.toBitmap()
@@ -169,37 +144,35 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun rotateBitmapLeft(view : View?){
+    private fun rotateBitmapLeft(view : View?){
         if(isImageSet){
-            val oldBitmap = imageView.drawable.toBitmap()
-            val drawable = imageView.drawable
-            val newBitmap = Bitmap.createBitmap(drawable.intrinsicHeight, drawable.intrinsicWidth, Bitmap.Config.ARGB_8888)
-            val oldHeight = drawable.intrinsicHeight
-            val oldWidth = drawable.intrinsicWidth
-            for (x in 0 until oldWidth) {
-                for (y in 0 until oldHeight) {
-                    val `val` = oldBitmap.getPixel(x,y) // RGB
-                    newBitmap.setPixel(y, oldWidth - x - 1, `val`)
-                }
-            }
-            imageView.setImageBitmap(newBitmap)
-            rescaledBitmap = Bitmap.createScaledBitmap(newBitmap, imageSize, imageSize, false)
+            val matrix = Matrix()
+            matrix.postRotate(270F)
+            val scaledBitmap = imageView.drawable.toBitmap()
+            val rotatedBitmap = Bitmap.createBitmap(scaledBitmap,
+                0,
+                0,
+                scaledBitmap.width,
+                scaledBitmap.height,
+                matrix,
+                true)
+            imageView.setImageBitmap(rotatedBitmap)
         }
     }
 
-    fun flipBitmap(view : View?){
+    private fun flipBitmap(view : View?){
         if(isImageSet){
-            val oldBitmap = imageView.drawable.toBitmap()
-            val drawable = imageView.drawable
-            val newBitmap = Bitmap.createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
-            for (x in 0 until newBitmap.width) {
-                for (y in 0 until newBitmap.height) {
-                    val `val` = oldBitmap.getPixel(x,y) // RGB
-                    newBitmap.setPixel(newBitmap.width - x -1, newBitmap.height - y -1, `val`)
-                }
-            }
-            imageView.setImageBitmap(newBitmap)
-            rescaledBitmap = Bitmap.createScaledBitmap(newBitmap, imageSize, imageSize, false)
+            val matrix = Matrix()
+            matrix.postRotate(180F)
+            val scaledBitmap = imageView.drawable.toBitmap()
+            val rotatedBitmap = Bitmap.createBitmap(scaledBitmap,
+                0,
+                0,
+                scaledBitmap.width,
+                scaledBitmap.height,
+                matrix,
+                true)
+            imageView.setImageBitmap(rotatedBitmap)
         }
     }
 
