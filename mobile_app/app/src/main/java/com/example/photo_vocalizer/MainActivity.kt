@@ -45,7 +45,18 @@ class MainActivity : AppCompatActivity() {
     private val cameraRequestPermissionCode = 101
     private val audioRequestPermissionCode = 102
     private val languageCode = "pl-PL"
-
+    private val regex0 = "obróć".toRegex(RegexOption.IGNORE_CASE)
+    private val regexRight = "prawo|90".toRegex(RegexOption.IGNORE_CASE)
+    private val regexLeft = "lewo|270".toRegex(RegexOption.IGNORE_CASE)
+    private val regexFlip = "odwróć|180".toRegex(RegexOption.IGNORE_CASE)
+    private val regexPick = "wybierz".toRegex(RegexOption.IGNORE_CASE)
+    private val regexTake = "zrób|wykonaj".toRegex(RegexOption.IGNORE_CASE)
+    private val regexClassify = "klasyfik".toRegex(RegexOption.IGNORE_CASE)
+    private val regexConfirm = "Potwierdzam".toRegex(RegexOption.IGNORE_CASE)
+    private val generalRecognitionCode = 0
+    private val askForDegreeCode = 1
+    private val askForConfirmationCode = 2
+    private var recognitionStatus = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,8 +95,7 @@ class MainActivity : AppCompatActivity() {
             override fun onEvent(i: Int, bundle: Bundle) {}
             override fun onResults(bundle: Bundle) {
                 val data = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                Toast.makeText(localContext,data!![0], Toast.LENGTH_LONG).show()
-                if(data[0].isNotEmpty())
+                if(data?.get(0)?.isNotEmpty() == true)
                     useRecognitionResult(data[0])
             }
         })
@@ -93,18 +103,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun useRecognitionResult(recognitionResult: String){
-        val regex0 = "obróć".toRegex(RegexOption.IGNORE_CASE)
-        val regexRight = "prawo|90".toRegex(RegexOption.IGNORE_CASE)
-        val regexLeft = "lewo|270".toRegex(RegexOption.IGNORE_CASE)
-        val regexFlip = "odwróć|180".toRegex(RegexOption.IGNORE_CASE)
-        val regexPick = "wybierz".toRegex(RegexOption.IGNORE_CASE)
-        val regexTake = "zrób|wykonaj".toRegex(RegexOption.IGNORE_CASE)
-        val regexClassify = "klasyfik".toRegex(RegexOption.IGNORE_CASE)
+        when(recognitionStatus) {
+            generalRecognitionCode -> generalRecognition(recognitionResult)
+            askForDegreeCode -> askForDegreeRecognition(recognitionResult)
+            askForConfirmationCode -> askForConfirmationRecognition(recognitionResult)
+        }
+    }
+
+    private fun generalRecognition(recognitionResult: String){
         if(regex0.find(recognitionResult) != null){
-            if(regexRight.find(recognitionResult) != null && isImageSet)
+            if(regexRight.find(recognitionResult) != null && isImageSet){
                 bitmapTransformation.rotateBitmap90(imageView)
-            if(regexLeft.find(recognitionResult) != null && isImageSet)
+                return
+            }
+            if(regexLeft.find(recognitionResult) != null && isImageSet){
                 bitmapTransformation.rotateBitmap270(imageView)
+                return
+            }
+            if(regexFlip.find(recognitionResult) != null && isImageSet){
+                bitmapTransformation.rotateBitmap180(imageView)
+                return
+            }
+            askForDegree()
             return
         }
         if(regexFlip.find(recognitionResult) != null && isImageSet)
@@ -116,7 +136,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if(regexTake.find(recognitionResult) != null){
-            takePhoto(null)
+            askForConfirmation()
             return
         }
         if(regexClassify.find(recognitionResult) != null){
@@ -125,6 +145,33 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun askForDegreeRecognition(recognitionResult: String) {
+        if(regexRight.find(recognitionResult) != null && isImageSet)
+            bitmapTransformation.rotateBitmap90(imageView)
+        if(regexLeft.find(recognitionResult) != null && isImageSet)
+            bitmapTransformation.rotateBitmap270(imageView)
+        if(regexFlip.find(recognitionResult) != null && isImageSet)
+            bitmapTransformation.rotateBitmap180(imageView)
+
+        recognitionStatus = generalRecognitionCode
+    }
+
+    private fun askForConfirmationRecognition(recognitionResult: String){
+        if(regexConfirm.find(recognitionResult) != null){
+            takePhoto(null)
+        }
+        recognitionStatus = generalRecognitionCode
+    }
+
+    private fun askForDegree(){
+        Toast.makeText(this, "Powiedz jak obrócić obraz", Toast.LENGTH_LONG).show()
+        recognitionStatus = askForDegreeCode
+    }
+
+    private fun askForConfirmation(){
+        Toast.makeText(this, "Powtwierdź mówiąc 'Potwierdzam'", Toast.LENGTH_LONG).show()
+        recognitionStatus = askForConfirmationCode
+    }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setOnTouchListener(){

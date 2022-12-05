@@ -17,7 +17,7 @@ class Classification (context: Context, imageSize: Int, resultText : TextView){
     private var context : Context
 
     private var resultText : TextView
-    private val classes = arrayOf("Apple", "Banana", "Orange")
+    private val classes = arrayOf("Jabłko", "Banan", "Pomarańcza")
     private var colors : Array<Int>
 
     init {
