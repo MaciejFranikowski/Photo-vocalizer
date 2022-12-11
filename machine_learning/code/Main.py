@@ -26,4 +26,13 @@ if __name__ == "__main__":
     # fruitModel.showTextDatasetClassification()
     
     # Evalue
-    fruitModel.evaluateModel()
+    # print('Evaluation on the test dataset:')
+    # fruitModel.evaluateModel()
+
+    # See summary
+    # fruitModel.model.summary()
+
+    ## Print 
+    # fruitModel.getPredictionsApples()
+    # fruitModel.getPredictionsOranges()
+    # fruitModel.getPredictionsBananas()

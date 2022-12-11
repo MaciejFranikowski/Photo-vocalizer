@@ -24,9 +24,10 @@ class FruitModel:
 			[	
 			# first reprocessing ( pixels from 0 to 1, instead of 0-255 )
 			# Preprocessing
-			tf.keras.layers.Rescaling(1./255),
+			# tf.keras.layers.Rescaling(1./255),
 			# 32 filters, kernel 3x3, relu function
-			tf.keras.layers.Conv2D(32, 3, activation=self.activationFunction),
+			# tf.keras.layers.Conv2D(32, 3, activation=self.activationFunction),
+			tf.keras.layers.Conv2D(32, 3, activation=self.activationFunction, input_shape=(32,32,3)),
 			# downsample the maps by 4, 2x2 -> 1
 			tf.keras.layers.MaxPooling2D(),
 			# Repeat twice
@@ -102,6 +103,54 @@ class FruitModel:
 	def evaluateModel(self):
 		# Check how it does on new images
 		self.model.evaluate(self.dataSetTest)
+	
+	# Retrieve a batch of images from the test set
+	def getPredictionsApples(self):
+		# 47 apples
+		# 43 bananas
+		newDataSet = tf.keras.utils.image_dataset_from_directory(
+			"../data/fruits/test",
+			image_size = (self.imageHeight, self.imageWidth),
+			batch_size = 47,
+			shuffle=False
+		)
+		image_batch, label_batch = newDataSet.as_numpy_iterator().next()
+		predictions = self.model.predict_on_batch(image_batch)
+		fileP = newDataSet.file_paths
+		for x in range(0,47):
+			print(fileP[x], self.classNames[numpy.argmax(predictions[x])])
+
+
+	def getPredictionsBananas(self):
+		# 47 apples
+		# 43 bananas
+		newDataSet = tf.keras.utils.image_dataset_from_directory(
+			"../data/fruits/test",
+			image_size = (self.imageHeight, self.imageWidth),
+			batch_size = 90,
+			shuffle=False
+		)
+		image_batch, label_batch = newDataSet.as_numpy_iterator().next()
+		predictions = self.model.predict_on_batch(image_batch)
+		fileP = newDataSet.file_paths
+		for x in range(47,90):
+			print(fileP[x], self.classNames[numpy.argmax(predictions[x])])
+
+	def getPredictionsOranges(self):
+		# 47 apples
+		# 43 bananas
+		newDataSet = tf.keras.utils.image_dataset_from_directory(
+			"../data/fruits/test",
+			image_size = (self.imageHeight, self.imageWidth),
+			batch_size = 130,
+			shuffle=False
+		)
+		image_batch, label_batch = newDataSet.as_numpy_iterator().next()
+		predictions = self.model.predict_on_batch(image_batch)
+		fileP = newDataSet.file_paths
+		for x in range(90,130):
+			print(fileP[x], self.classNames[numpy.argmax(predictions[x])])
+		
 
 	##### EXPORT 
 	def exporToTfLite(self, fileName):
