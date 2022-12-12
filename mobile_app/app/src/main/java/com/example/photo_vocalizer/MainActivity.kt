@@ -79,7 +79,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun createSpeechRecognizer() : Boolean{
-        val localContext = this
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
         speechRecognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
         speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
