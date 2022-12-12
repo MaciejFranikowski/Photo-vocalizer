@@ -2,9 +2,11 @@ package com.example.photo_vocalizer
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.ThumbnailUtils
 import android.net.Uri
 import android.os.Bundle
@@ -12,6 +14,7 @@ import android.provider.MediaStore
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.util.Base64
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
@@ -22,6 +25,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.photo_vocalizer.bitmapTransformation.BitmapTransformation
 import com.example.photo_vocalizer.classification.Classification
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 
 
@@ -65,6 +69,30 @@ class MainActivity : AppCompatActivity() {
         bitmapTransformation = BitmapTransformation()
         classifier = Classification(this, imageSize, resultText)
         setUpSpeechRecognition()
+        restoreApp()
+    }
+
+    private fun restoreApp(){
+        val sharedPref = this.getSharedPreferences("sharedPref", Context.MODE_PRIVATE)
+        val encodedImage = sharedPref.getString("encodedImage", "DEFAULT")
+        val setImage = sharedPref.getBoolean("isImageSet", false)
+        val color = sharedPref.getInt("color", 0)
+        val txt = sharedPref.getString("text", "DEFAULT")
+        if (encodedImage != "DEFAULT") {
+            val imageBytes = Base64.decode(encodedImage, Base64.DEFAULT)
+            val decodedImage = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+            bitmap = decodedImage
+            imageView.setImageBitmap(decodedImage)
+        }
+        if (setImage) {
+            isImageSet = true
+        }
+        if (color!=0) {
+            resultText.setTextColor(color)
+        }
+        if (txt != "DEFAULT") {
+            resultText.text = txt
+        }
     }
 
     private fun setUpSpeechRecognition(){
@@ -275,6 +303,27 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+//        outState
+        if(isImageSet){
+            val sharedPref = this.getSharedPreferences("sharedPref", Context.MODE_PRIVATE)
+            val baos = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos)
+            val textColor = resultText.currentTextColor
+            val textResult = resultText.text.toString()
+            val encodedImage = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT)
+            with(sharedPref.edit()) {
+                putString("encodedImage", encodedImage)
+                putInt("color", textColor)
+                putString("text", textResult)
+                putBoolean("isImageSet", true)
+                apply()
+            }
+        }
+        super.onSaveInstanceState(outState)
+        Toast.makeText(this, "onSaveInstanceState", Toast.LENGTH_LONG).show()
     }
 
 }
