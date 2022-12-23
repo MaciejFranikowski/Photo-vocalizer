@@ -140,22 +140,31 @@ class MainActivity : AppCompatActivity() {
     private fun generalRecognition(recognitionResult: String){
         if(regex0.find(recognitionResult) != null){
             if(regexRight.find(recognitionResult) != null && isImageSet){
-                bitmapTransformation.rotateBitmap90(imageView)
+                val rotatedMap : Bitmap? = bitmapTransformation.rotateBitmap90(imageView)
+                if(rotatedMap != null)
+                    rescaledBitmap = Bitmap.createScaledBitmap(rotatedMap, imageSize, imageSize, false)
                 return
             }
             if(regexLeft.find(recognitionResult) != null && isImageSet){
-                bitmapTransformation.rotateBitmap270(imageView)
+                val rotatedMap : Bitmap? = bitmapTransformation.rotateBitmap270(imageView)
+                if(rotatedMap != null)
+                    rescaledBitmap = Bitmap.createScaledBitmap(rotatedMap, imageSize, imageSize, false)
                 return
             }
             if(regexFlip.find(recognitionResult) != null && isImageSet){
-                bitmapTransformation.rotateBitmap180(imageView)
+                val rotatedMap : Bitmap? = bitmapTransformation.rotateBitmap180(imageView)
+                if(rotatedMap != null)
+                    rescaledBitmap = Bitmap.createScaledBitmap(rotatedMap, imageSize, imageSize, false)
                 return
             }
             askForDegree()
             return
         }
-        if(regexFlip.find(recognitionResult) != null && isImageSet)
-            bitmapTransformation.rotateBitmap180(imageView)
+        if(regexFlip.find(recognitionResult) != null && isImageSet){
+            val rotatedMap : Bitmap? = bitmapTransformation.rotateBitmap180(imageView)
+            if(rotatedMap != null)
+                rescaledBitmap = Bitmap.createScaledBitmap(rotatedMap, imageSize, imageSize, false)
+        }
 
         if(regexPick.find(recognitionResult) != null){
             pickFromGallery(null)
@@ -173,12 +182,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun askForDegreeRecognition(recognitionResult: String) {
-        if(regexRight.find(recognitionResult) != null && isImageSet)
-            bitmapTransformation.rotateBitmap90(imageView)
-        if(regexLeft.find(recognitionResult) != null && isImageSet)
-            bitmapTransformation.rotateBitmap270(imageView)
-        if(regexFlip.find(recognitionResult) != null && isImageSet)
-            bitmapTransformation.rotateBitmap180(imageView)
+        if(regexRight.find(recognitionResult) != null && isImageSet){
+            val rotatedMap : Bitmap? =  bitmapTransformation.rotateBitmap90(imageView)
+            if(rotatedMap != null)
+                rescaledBitmap = Bitmap.createScaledBitmap(rotatedMap, imageSize, imageSize, false)
+        }
+
+        if(regexLeft.find(recognitionResult) != null && isImageSet) {
+            val rotatedMap : Bitmap? =  bitmapTransformation.rotateBitmap270(imageView)
+            if(rotatedMap != null)
+                rescaledBitmap = Bitmap.createScaledBitmap(rotatedMap, imageSize, imageSize, false)
+        }
+        if(regexFlip.find(recognitionResult) != null && isImageSet){
+            val rotatedMap : Bitmap? =  bitmapTransformation.rotateBitmap180(imageView)
+            if(rotatedMap != null)
+                rescaledBitmap = Bitmap.createScaledBitmap(rotatedMap, imageSize, imageSize, false)
+        }
 
         recognitionStatus = generalRecognitionCode
     }
@@ -269,8 +288,12 @@ class MainActivity : AppCompatActivity() {
 
     @Suppress("UNUSED_PARAMETER")
     fun rotate90(view: View){
-        if(isImageSet)
-            bitmapTransformation.rotateBitmap90(imageView)
+        if(isImageSet){
+            val rotatedMap = bitmapTransformation.rotateBitmap90(imageView)
+            if(rotatedMap != null)
+                rescaledBitmap = Bitmap.createScaledBitmap(rotatedMap, imageSize, imageSize, false)
+        }
+
     }
 
     private fun assignReferences(){
@@ -306,7 +329,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-//        outState
         if(isImageSet){
             val sharedPref = this.getSharedPreferences("sharedPref", Context.MODE_PRIVATE)
             val baos = ByteArrayOutputStream()
@@ -323,7 +345,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
         super.onSaveInstanceState(outState)
-        Toast.makeText(this, "onSaveInstanceState", Toast.LENGTH_LONG).show()
     }
 
 }

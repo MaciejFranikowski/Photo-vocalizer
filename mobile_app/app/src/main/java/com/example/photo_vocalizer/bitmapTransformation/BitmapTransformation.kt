@@ -2,12 +2,11 @@ package com.example.photo_vocalizer.bitmapTransformation
 
 import android.graphics.Bitmap
 import android.graphics.Matrix
-import android.view.View
 import android.widget.ImageView
 import androidx.core.graphics.drawable.toBitmap
 
 class BitmapTransformation {
-    fun rotateBitmap90(imageView : ImageView){
+    fun rotateBitmap90(imageView : ImageView): Bitmap? {
         val matrix = Matrix()
         matrix.postRotate(90F)
         val scaledBitmap = imageView.drawable.toBitmap()
@@ -19,9 +18,10 @@ class BitmapTransformation {
             matrix,
             true)
         imageView.setImageBitmap(rotatedBitmap)
+        return rotatedBitmap;
     }
 
-    fun rotateBitmap270(imageView : ImageView){
+    fun rotateBitmap270(imageView : ImageView): Bitmap?{
         val matrix = Matrix()
         matrix.postRotate(270F)
         val scaledBitmap = imageView.drawable.toBitmap()
@@ -33,9 +33,10 @@ class BitmapTransformation {
             matrix,
             true)
         imageView.setImageBitmap(rotatedBitmap)
+        return rotatedBitmap;
     }
 
-    fun rotateBitmap180(imageView : ImageView){
+    fun rotateBitmap180(imageView : ImageView): Bitmap?{
         val matrix = Matrix()
         matrix.postRotate(180F)
         val scaledBitmap = imageView.drawable.toBitmap()
@@ -47,5 +48,6 @@ class BitmapTransformation {
             matrix,
             true)
         imageView.setImageBitmap(rotatedBitmap)
+        return rotatedBitmap;
     }
 }
