@@ -6,39 +6,9 @@ import android.widget.ImageView
 import androidx.core.graphics.drawable.toBitmap
 
 class BitmapTransformation {
-    fun rotateBitmap90(imageView : ImageView): Bitmap? {
+    fun rotateBitmap(imageView : ImageView, degree : Float): Bitmap? {
         val matrix = Matrix()
-        matrix.postRotate(90F)
-        val scaledBitmap = imageView.drawable.toBitmap()
-        val rotatedBitmap = Bitmap.createBitmap(scaledBitmap,
-            0,
-            0,
-            scaledBitmap.width,
-            scaledBitmap.height,
-            matrix,
-            true)
-        imageView.setImageBitmap(rotatedBitmap)
-        return rotatedBitmap;
-    }
-
-    fun rotateBitmap270(imageView : ImageView): Bitmap?{
-        val matrix = Matrix()
-        matrix.postRotate(270F)
-        val scaledBitmap = imageView.drawable.toBitmap()
-        val rotatedBitmap = Bitmap.createBitmap(scaledBitmap,
-            0,
-            0,
-            scaledBitmap.width,
-            scaledBitmap.height,
-            matrix,
-            true)
-        imageView.setImageBitmap(rotatedBitmap)
-        return rotatedBitmap;
-    }
-
-    fun rotateBitmap180(imageView : ImageView): Bitmap?{
-        val matrix = Matrix()
-        matrix.postRotate(180F)
+        matrix.postRotate(degree)
         val scaledBitmap = imageView.drawable.toBitmap()
         val rotatedBitmap = Bitmap.createBitmap(scaledBitmap,
             0,
