@@ -7,18 +7,20 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.example.photo_vocalizer.R
 import com.example.photo_vocalizer.ml.FruitModel
+import com.example.photo_vocalizer.viewModel.RecognitionResultViewModel
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-class Classification (context: Context, imageSize: Int, resultText : TextView){
+class Classification (context: Context, imageSize: Int, resultText : TextView, viewModel: RecognitionResultViewModel){
     private var imageSize : Int
     private var context : Context
 
     private var resultText : TextView
     private val classes = arrayOf("Jabłko", "Banan", "Pomarańcza")
     private var colors : Array<Int>
+    private var viewModel : RecognitionResultViewModel
 
     init {
         this.imageSize = imageSize
@@ -27,6 +29,7 @@ class Classification (context: Context, imageSize: Int, resultText : TextView){
         this.colors = arrayOf(ContextCompat.getColor(context, R.color.red),
             ContextCompat.getColor(context, R.color.yellow),
             ContextCompat.getColor(context, R.color.orange))
+        this.viewModel = viewModel
     }
 
     fun classifyImage(context: Context, rescaledBitmap: Bitmap) {
@@ -70,11 +73,13 @@ class Classification (context: Context, imageSize: Int, resultText : TextView){
 
     private fun setClassifiedClassText(confidences: FloatArray){
         val maxPos = getMaxPosition(confidences)
+        viewModel.textContents = classes[maxPos]
         resultText.text = classes[maxPos]
     }
 
     private fun setClassifiedClassColor(confidences: FloatArray){
         val maxPos = getMaxPosition(confidences)
+        viewModel.textColor = colors[maxPos]
         resultText.setTextColor(colors[maxPos])
     }
 

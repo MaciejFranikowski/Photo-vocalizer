@@ -2,6 +2,7 @@ package com.example.photo_vocalizer
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -22,11 +23,19 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import androidx.lifecycle.ViewModelProvider
 import com.example.photo_vocalizer.bitmapTransformation.BitmapTransformation
 import com.example.photo_vocalizer.classification.Classification
+import com.example.photo_vocalizer.viewModel.RecognitionResultViewModel
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
@@ -35,16 +44,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var listenButton : Button
     private lateinit var imageView : ImageView
     private lateinit var resultText : TextView
-    private lateinit var bitmap: Bitmap
     private lateinit var rescaledBitmap: Bitmap
+    private lateinit var photoFile: File
     private lateinit var classifier: Classification
     private lateinit var bitmapTransformation : BitmapTransformation
     private lateinit var speechRecognizer : SpeechRecognizer
     private lateinit var speechRecognizerIntent : Intent
-    private var isRecognizerSet : Boolean = false
-    private var isImageSet : Boolean = false
+    private lateinit var viewModel: RecognitionResultViewModel
     private val imageSize = 32
-    private val cameraRequestCode = 1
     private val galleryRequestCode = 3
     private val cameraRequestPermissionCode = 101
     private val audioRequestPermissionCode = 102
@@ -67,37 +74,30 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         assignReferences()
         bitmapTransformation = BitmapTransformation()
-        classifier = Classification(this, imageSize, resultText)
+        viewModel = ViewModelProvider(this)[RecognitionResultViewModel::class.java]
+        classifier = Classification(this, imageSize, resultText, viewModel)
         setUpSpeechRecognition()
         restoreApp()
     }
 
     private fun restoreApp(){
-        val sharedPref = this.getSharedPreferences("sharedPref", Context.MODE_PRIVATE)
-        val encodedImage = sharedPref.getString("encodedImage", "DEFAULT")
-        val setImage = sharedPref.getBoolean("isImageSet", false)
-        val color = sharedPref.getInt("color", 0)
-        val txt = sharedPref.getString("text", "DEFAULT")
-        if (encodedImage != "DEFAULT") {
-            val imageBytes = Base64.decode(encodedImage, Base64.DEFAULT)
-            val decodedImage = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-            bitmap = decodedImage
-            imageView.setImageBitmap(decodedImage)
+        if(viewModel.photoFileName!=""){
+            photoFile = File(getExternalFilesDir(null), viewModel.photoFileName)
+            val bitmap = bitmapTransformation.getImageOriginalOrientation(photoFile)
+            imageView.setImageBitmap(bitmap)
+            rescaledBitmap = Bitmap.createScaledBitmap(bitmap, imageSize, imageSize, false)
         }
-        if (setImage) {
-            isImageSet = true
+        if (viewModel.textColor!=0) {
+            resultText.setTextColor(viewModel.textColor)
         }
-        if (color!=0) {
-            resultText.setTextColor(color)
-        }
-        if (txt != "DEFAULT") {
-            resultText.text = txt
+        if (viewModel.textContents != "") {
+            resultText.text = viewModel.textContents
         }
     }
 
     private fun setUpSpeechRecognition(){
         if(checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED){
-            if (!isRecognizerSet) {
+            if (!viewModel.isRecognizerSet) {
                 createSpeechRecognizer()
                 setOnTouchListener()
             }
@@ -139,19 +139,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun generalRecognition(recognitionResult: String){
         if(regex0.find(recognitionResult) != null){
-            if(regexRight.find(recognitionResult) != null && isImageSet){
+            if(regexRight.find(recognitionResult) != null && viewModel.isImageSet){
                 val rotatedMap : Bitmap? = bitmapTransformation.rotateBitmap(imageView, 90F)
                 if(rotatedMap != null)
                     rescaledBitmap = Bitmap.createScaledBitmap(rotatedMap, imageSize, imageSize, false)
                 return
             }
-            if(regexLeft.find(recognitionResult) != null && isImageSet){
+            if(regexLeft.find(recognitionResult) != null && viewModel.isImageSet){
                 val rotatedMap : Bitmap? = bitmapTransformation.rotateBitmap(imageView, 270F)
                 if(rotatedMap != null)
                     rescaledBitmap = Bitmap.createScaledBitmap(rotatedMap, imageSize, imageSize, false)
                 return
             }
-            if(regexFlip.find(recognitionResult) != null && isImageSet){
+            if(regexFlip.find(recognitionResult) != null && viewModel.isImageSet){
                 val rotatedMap : Bitmap? = bitmapTransformation.rotateBitmap(imageView, 180F)
                 if(rotatedMap != null)
                     rescaledBitmap = Bitmap.createScaledBitmap(rotatedMap, imageSize, imageSize, false)
@@ -160,7 +160,7 @@ class MainActivity : AppCompatActivity() {
             askForDegree()
             return
         }
-        if(regexFlip.find(recognitionResult) != null && isImageSet){
+        if(regexFlip.find(recognitionResult) != null && viewModel.isImageSet){
             val rotatedMap : Bitmap? = bitmapTransformation.rotateBitmap(imageView, 180F)
             if(rotatedMap != null)
                 rescaledBitmap = Bitmap.createScaledBitmap(rotatedMap, imageSize, imageSize, false)
@@ -182,23 +182,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun askForDegreeRecognition(recognitionResult: String) {
-        if(regexRight.find(recognitionResult) != null && isImageSet){
+        if(regexRight.find(recognitionResult) != null && viewModel.isImageSet){
             val rotatedMap : Bitmap? =  bitmapTransformation.rotateBitmap(imageView, 90F)
             if(rotatedMap != null)
                 rescaledBitmap = Bitmap.createScaledBitmap(rotatedMap, imageSize, imageSize, false)
         }
 
-        if(regexLeft.find(recognitionResult) != null && isImageSet) {
+        if(regexLeft.find(recognitionResult) != null && viewModel.isImageSet) {
             val rotatedMap : Bitmap? =  bitmapTransformation.rotateBitmap(imageView, 270F)
             if(rotatedMap != null)
                 rescaledBitmap = Bitmap.createScaledBitmap(rotatedMap, imageSize, imageSize, false)
         }
-        if(regexFlip.find(recognitionResult) != null && isImageSet){
+        if(regexFlip.find(recognitionResult) != null && viewModel.isImageSet){
             val rotatedMap : Bitmap? =  bitmapTransformation.rotateBitmap(imageView, 180F)
             if(rotatedMap != null)
                 rescaledBitmap = Bitmap.createScaledBitmap(rotatedMap, imageSize, imageSize, false)
         }
-
         recognitionStatus = generalRecognitionCode
     }
 
@@ -234,52 +233,66 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("SimpleDateFormat")
     @Suppress("UNUSED_PARAMETER")
     fun takePhoto(view: View?){
         if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-            startActivityForResult(cameraIntent, cameraRequestCode)
+            val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+            viewModel.photoFileName = "$timeStamp.jpg"
+            photoFile = File(getExternalFilesDir(null), viewModel.photoFileName)
+            val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            intent.putExtra(
+                MediaStore.EXTRA_OUTPUT, FileProvider.getUriForFile(
+                    this, BuildConfig.APPLICATION_ID + ".provider",
+                    photoFile
+                )
+            )
+            takePhotoIntentLauncher.launch(intent)
         } else {
             requestPermissions(arrayOf(Manifest.permission.CAMERA), cameraRequestPermissionCode)
         }
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    fun pickFromGallery(view: View?){
-        val cameraIntent =
-            Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        startActivityForResult(cameraIntent, galleryRequestCode)
+    private val takePhotoIntentLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        if (it.resultCode == Activity.RESULT_OK) {
+            photoFile = File(getExternalFilesDir(null), viewModel.photoFileName)
+            val bitmap = bitmapTransformation.getImageOriginalOrientation(photoFile)
+            imageView.setImageBitmap(bitmap)
+            rescaledBitmap = Bitmap.createScaledBitmap(bitmap, imageSize, imageSize, false)
+            viewModel.isImageSet = true
+        } else {
+            viewModel.photoFileName = ""
+        }
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == RESULT_OK) {
-            if (requestCode == cameraRequestCode) {
-                bitmap = (data?.extras!!["data"] as Bitmap?)!!
-                val dimension = bitmap.width.coerceAtMost(bitmap.height)
-                bitmap = ThumbnailUtils.extractThumbnail(bitmap, dimension, dimension)
+    private val pickFromGalleryIntentLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult())
+    {
+        if (it.resultCode == Activity.RESULT_OK) {
+            val data: Uri? = it.data?.data
+            try {
+                val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, data)
                 imageView.setImageBitmap(bitmap)
+                // TODO: try to integrate rescaled bitmap into the view model
                 rescaledBitmap = Bitmap.createScaledBitmap(bitmap, imageSize, imageSize, false)
-                isImageSet = true
-            }
-            if (requestCode == galleryRequestCode) {
-                val dat: Uri? = data?.data
-                try {
-                    bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, dat)
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                }
-                imageView.setImageBitmap(bitmap)
-                rescaledBitmap = Bitmap.createScaledBitmap(bitmap, imageSize, imageSize, false)
-                isImageSet = true
+                viewModel.isImageSet = true
+            } catch (e: IOException) {
+                e.printStackTrace()
             }
         }
     }
 
     @Suppress("UNUSED_PARAMETER")
+    fun pickFromGallery(view: View?){
+        val cameraIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        pickFromGalleryIntentLauncher.launch(cameraIntent)
+    }
+
+    @Suppress("UNUSED_PARAMETER")
      fun classifyImage(view: View?) {
-         if(isImageSet){
+         if(viewModel.isImageSet){
              classifier.classifyImage(this, rescaledBitmap)
          } else {
             Toast.makeText(this@MainActivity, "No image loaded", Toast.LENGTH_LONG).show()
@@ -288,12 +301,11 @@ class MainActivity : AppCompatActivity() {
 
     @Suppress("UNUSED_PARAMETER")
     fun rotate90(view: View){
-        if(isImageSet){
+        if(viewModel.isImageSet){
             val rotatedMap = bitmapTransformation.rotateBitmap(imageView, 90F)
             if(rotatedMap != null)
                 rescaledBitmap = Bitmap.createScaledBitmap(rotatedMap, imageSize, imageSize, false)
         }
-
     }
 
     private fun assignReferences(){
@@ -327,24 +339,4 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        if(isImageSet){
-            val sharedPref = this.getSharedPreferences("sharedPref", Context.MODE_PRIVATE)
-            val baos = ByteArrayOutputStream()
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos)
-            val textColor = resultText.currentTextColor
-            val textResult = resultText.text.toString()
-            val encodedImage = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT)
-            with(sharedPref.edit()) {
-                putString("encodedImage", encodedImage)
-                putInt("color", textColor)
-                putString("text", textResult)
-                putBoolean("isImageSet", true)
-                apply()
-            }
-        }
-        super.onSaveInstanceState(outState)
-    }
-
 }
