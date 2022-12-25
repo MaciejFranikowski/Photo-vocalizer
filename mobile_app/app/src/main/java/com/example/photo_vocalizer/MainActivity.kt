@@ -82,10 +82,20 @@ class MainActivity : AppCompatActivity() {
 
     private fun restoreApp(){
         if(viewModel.photoFileName!=""){
-            photoFile = File(getExternalFilesDir(null), viewModel.photoFileName)
-            val bitmap = bitmapTransformation.getImageOriginalOrientation(photoFile)
-            imageView.setImageBitmap(bitmap)
-            rescaledBitmap = Bitmap.createScaledBitmap(bitmap, imageSize, imageSize, false)
+            if(viewModel.photoFileName.contains("jpg")){
+                photoFile = File(getExternalFilesDir(null), viewModel.photoFileName)
+                val bitmap = bitmapTransformation.getImageOriginalOrientation(photoFile)
+                imageView.setImageBitmap(bitmap)
+                rescaledBitmap = Bitmap.createScaledBitmap(bitmap, imageSize, imageSize, false)
+            } else {
+                try {
+                    val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, Uri.parse(viewModel.photoFileName))
+                    imageView.setImageBitmap(bitmap)
+                    rescaledBitmap = Bitmap.createScaledBitmap(bitmap, imageSize, imageSize, false)
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                }
+            }
         }
         if (viewModel.textColor!=0) {
             resultText.setTextColor(viewModel.textColor)
@@ -272,6 +282,7 @@ class MainActivity : AppCompatActivity() {
     {
         if (it.resultCode == Activity.RESULT_OK) {
             val data: Uri? = it.data?.data
+            viewModel.photoFileName = data.toString()
             try {
                 val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, data)
                 imageView.setImageBitmap(bitmap)
@@ -281,6 +292,8 @@ class MainActivity : AppCompatActivity() {
             } catch (e: IOException) {
                 e.printStackTrace()
             }
+        } else {
+            viewModel.photoFileName = ""
         }
     }
 
