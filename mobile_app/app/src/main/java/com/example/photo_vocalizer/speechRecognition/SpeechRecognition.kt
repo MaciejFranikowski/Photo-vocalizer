@@ -171,7 +171,7 @@ class SpeechRecognition(
     }
 
     private fun askForConfirmation(){
-        Toast.makeText(context, "Powtwierdź mówiąc 'Potwierdzam'", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, "Potwierdź mówiąc 'Potwierdzam'", Toast.LENGTH_LONG).show()
         recognitionStatus = askForConfirmationCode
     }
 

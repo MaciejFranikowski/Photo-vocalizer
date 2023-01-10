@@ -27,8 +27,8 @@ import com.example.photo_vocalizer.speechRecognition.SpeechRecognition
 import com.example.photo_vocalizer.viewModel.RecognitionResultViewModel
 import java.io.File
 import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.*
+import java.time.Instant
+import java.time.format.DateTimeFormatter
 
 
 class MainActivity : AppCompatActivity(), RecognitionCallback {
@@ -38,7 +38,7 @@ class MainActivity : AppCompatActivity(), RecognitionCallback {
     private lateinit var imageView : ImageView
     private lateinit var resultText : TextView
     private lateinit var rescaledBitmap: Bitmap
-    private lateinit var photoFile: File
+    private lateinit var photo: File
     private lateinit var classifier: Classification
     private lateinit var bitmapTransformation : BitmapTransformation
     private lateinit var viewModel: RecognitionResultViewModel
@@ -61,8 +61,8 @@ class MainActivity : AppCompatActivity(), RecognitionCallback {
     private fun restoreApp(){
         if(viewModel.photoFileName!=""){
             if(viewModel.photoFileName.contains("jpg")){
-                photoFile = File(getExternalFilesDir(null), viewModel.photoFileName)
-                val bitmap = bitmapTransformation.getImageOriginalOrientation(photoFile)
+                photo = File(getExternalFilesDir(null), viewModel.photoFileName)
+                val bitmap = bitmapTransformation.getInitialRotation(photo)
                 imageView.setImageBitmap(bitmap)
                 rescaledBitmap = Bitmap.createScaledBitmap(bitmap, imageSize, imageSize, false)
             } else {
@@ -118,14 +118,13 @@ class MainActivity : AppCompatActivity(), RecognitionCallback {
     @Suppress("UNUSED_PARAMETER")
     override fun takePhoto(view: View?){
         if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-            viewModel.photoFileName = "$timeStamp.jpg"
-            photoFile = File(getExternalFilesDir(null), viewModel.photoFileName)
+            viewModel.photoFileName = "${DateTimeFormatter.ISO_INSTANT.format(Instant.now())}.jpg"
+            photo = File(getExternalFilesDir(null), viewModel.photoFileName)
             val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
             intent.putExtra(
                 MediaStore.EXTRA_OUTPUT, FileProvider.getUriForFile(
                     this, BuildConfig.APPLICATION_ID + ".provider",
-                    photoFile
+                    photo
                 )
             )
             takePhotoIntentLauncher.launch(intent)
@@ -138,8 +137,8 @@ class MainActivity : AppCompatActivity(), RecognitionCallback {
         ActivityResultContracts.StartActivityForResult()
     ) {
         if (it.resultCode == Activity.RESULT_OK) {
-            photoFile = File(getExternalFilesDir(null), viewModel.photoFileName)
-            val bitmap = bitmapTransformation.getImageOriginalOrientation(photoFile)
+            photo = File(getExternalFilesDir(null), viewModel.photoFileName)
+            val bitmap = bitmapTransformation.getInitialRotation(photo)
             imageView.setImageBitmap(bitmap)
             rescaledBitmap = Bitmap.createScaledBitmap(bitmap, imageSize, imageSize, false)
             viewModel.isImageSet = true
